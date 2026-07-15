@@ -1,0 +1,61 @@
+---
+description: Standard API error response shape for the ticket system
+globs: src/backend/**/*.py,src/frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# API Error Shape
+
+All ticket-system API errors use a consistent JSON body so the React UI can render meaningful states.
+
+## Standard Error Envelope
+
+```json
+{
+  "error": "<machine_code>",
+  "message": "<human-readable explanation>",
+  "details": {}
+}
+```
+
+- `error` — stable snake_case code for frontend branching
+- `message` — safe to display to users
+- `details` — optional; field-level validation errors
+
+## Standard Error Codes
+
+| HTTP | `error` | When |
+|------|---------|------|
+| 400 | `invalid_status_transition` | State machine rejection |
+| 401 | `unauthorized` | Missing/invalid JWT |
+| 403 | `forbidden` | Valid auth but not allowed |
+| 404 | `not_found` | Ticket/comment/user not found |
+| 422 | `validation_error` | Pydantic / missing required fields |
+
+## Validation Errors (422)
+
+```json
+{
+  "error": "validation_error",
+  "message": "Request validation failed",
+  "details": {
+    "title": ["Field required"],
+    "priority": ["Must be one of: low, medium, high"]
+  }
+}
+```
+
+FastAPI: use a custom exception handler or consistent `HTTPException` detail shape — do not return raw Pydantic default format to the frontend without mapping.
+
+## Frontend Handling
+
+1. Parse `error` code for toast/banner severity
+2. Display `message` to user
+3. Map `details` to form field errors on create/update ticket forms
+4. On `invalid_status_transition`, show message on status control without clearing ticket detail
+
+## Rules
+
+- Never expose stack traces, SQL, or internal paths in responses
+- Never return 200 with an error payload
+- Log full exception server-side; return sanitized `message` client-side

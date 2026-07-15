@@ -1,0 +1,64 @@
+---
+description: Keep api-contract.md in sync whenever FastAPI router files change
+globs: src/backend/**/routers/**/*.py,src/backend/**/router*.py,api-contract.md
+alwaysApply: false
+---
+
+# API Contract Sync
+
+`api-contract.md` is the human-readable contract reviewers read. It must match implemented routes.
+
+## Trigger
+
+When you **create, modify, or delete** any file under `src/backend/**/routers/` (or any `router*.py` registering endpoints), you **must** update `api-contract.md` in the same task — before marking work complete.
+
+## Per-Endpoint Template
+
+For each route, document:
+
+```markdown
+## Endpoint: <Short Name>
+
+Method: <GET|POST|PATCH|DELETE>
+Path: `/api/...`
+Purpose: <one line>
+
+### Request
+<JSON body or query params with types>
+
+### Response
+<JSON shape with status codes>
+
+### Validation Rules
+<required fields, enums, auth requirement>
+
+### Error Responses
+<401, 403, 404, 422, invalid_status_transition, etc.>
+```
+
+## Ticket System Endpoints (expected)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| POST | `/api/auth/login` | Returns JWT |
+| GET | `/api/tickets` | List + search/filter query params |
+| POST | `/api/tickets` | Create; sets `createdBy` from JWT |
+| GET | `/api/tickets/{id}` | Detail + comments |
+| PATCH | `/api/tickets/{id}` | Update title, description, priority, assignee — **not status** |
+| PATCH | `/api/tickets/{id}/status` | State machine only |
+| POST | `/api/tickets/{id}/comments` | Add comment |
+| GET | `/api/tickets/export` | CSV of caller's tickets |
+
+Add rows when new routes appear; remove sections when routes are deleted.
+
+## Sync Checklist
+
+- [ ] Every router decorator has a matching `api-contract.md` section
+- [ ] Request/response examples use real field names (`assignedTo`, `createdBy`, `ticketId`)
+- [ ] Auth requirements stated (public vs Bearer JWT)
+- [ ] Status transition errors documented on status endpoint
+- [ ] `data-model.md` updated if payload shapes change
+
+## Skill
+
+Use the `sync-api-docs` skill for a structured sync pass.

@@ -1,0 +1,67 @@
+---
+description: Support Ticket Management System — stack, layout, and core domain boundaries
+alwaysApply: true
+---
+
+# Project Context
+
+## What This Repo Is
+
+AI-assisted assessment project: **Support Ticket Management System**.
+Internal users create, update, comment on, search/filter, and progress tickets through a fixed lifecycle.
+
+## Stack (do not substitute)
+
+| Layer | Choice | Location |
+|-------|--------|----------|
+| Frontend | React + Vite + TypeScript | `src/frontend/` |
+| Backend | FastAPI + SQLAlchemy + Alembic | `src/backend/` |
+| Database | PostgreSQL | `database/` |
+| Auth | JWT (login identifies `createdBy` for CSV export) | backend middleware + frontend protected routes |
+| Tests | pytest + real PostgreSQL for integration tests | `tests/` |
+
+## Domain Entities
+
+- **User** — seeded + auth; fields: `id`, `name`, `email`, `role`
+- **Ticket** — `id`, `title`, `description`, `priority`, `status`, `assignedTo`, `createdBy`, `createdAt`, `updatedAt`
+- **Comment** — `id`, `ticketId`, `message`, `createdBy`, `createdAt`
+
+## Mandatory Core Behaviors
+
+1. Ticket CRUD (list, detail, update fields + assignee)
+2. Comments on tickets
+3. Status changes **only** via state machine (see `state-machine.mdc`)
+4. Backend validation; UI shows meaningful errors
+5. Persistence survives restart
+6. Search or filter on ticket list (at least one)
+7. CSV export of **authenticated user's** self-created tickets (`createdBy` = current user)
+8. Integration tests proving state-machine rules
+
+## Code Placement
+
+```
+src/backend/app/routers/     # FastAPI route modules
+src/backend/app/services/    # Business logic (state machine lives here)
+src/backend/app/models/      # SQLAlchemy models
+src/backend/app/schemas/     # Pydantic request/response
+src/frontend/src/pages/      # Route-level views
+src/frontend/src/components/ # Reusable UI
+tests/backend/integration/   # Real-DB integration tests
+```
+
+## Do Not
+
+- Add frameworks outside the stack above without explicit user approval
+- Implement user-management CRUD UI (users are seeded; auth only)
+- Bypass backend validation in the frontend
+- Commit secrets (see `security-and-env.mdc`)
+- Expand scope at the expense of lifecycle artifacts in repo root and `ai-prompts/`
+
+## Source of Truth Docs
+
+| Topic | File |
+|-------|------|
+| API shape | `api-contract.md` |
+| Data model | `data-model.md` |
+| UI flows | `ui-flow.md` |
+| Acceptance | `acceptance-criteria.md` |

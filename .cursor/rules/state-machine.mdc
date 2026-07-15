@@ -1,0 +1,59 @@
+---
+description: Enforce ticket status state machine — exact allowed transitions only
+globs: src/backend/**/*.py,src/frontend/**/*.{ts,tsx},tests/**/*.py
+alwaysApply: false
+---
+
+# Ticket Status State Machine
+
+The state machine is the **signature judgment area**. All status changes must go through backend enforcement; the frontend may only offer valid next statuses.
+
+## Canonical Status Values
+
+Use these exact string values in DB, API, and tests:
+
+| Status | API value |
+|--------|-----------|
+| Open | `open` |
+| In Progress | `in_progress` |
+| Resolved | `resolved` |
+| Closed | `closed` |
+| Cancelled | `cancelled` |
+
+New tickets always start as `open`.
+
+## Allowed Transitions (ONLY these)
+
+```
+open         → in_progress
+open         → cancelled
+in_progress  → resolved
+in_progress  → cancelled
+resolved     → closed
+```
+
+## Forbidden (must return 400/422)
+
+Any transition not listed above, including:
+
+- `closed` → anything (terminal)
+- `cancelled` → anything (terminal)
+- `open` → `resolved` or `closed` (skipping steps)
+- `in_progress` → `open` (no reopen)
+- `resolved` → `in_progress` or `cancelled`
+- Same-status no-op unless explicitly documented
+
+## Implementation Rules
+
+1. **Single enforcement point**: `src/backend/app/services/ticket_state_machine.py` (or equivalent) — routers call this, never mutate `status` directly.
+2. **Dedicated endpoint**: `PATCH /api/tickets/{id}/status` with body `{ "status": "<target>" }` — do not allow status changes via general ticket update.
+3. **Response on invalid transition**:
+   ```json
+   { "error": "invalid_status_transition", "message": "Cannot transition from 'open' to 'resolved'", "current_status": "open", "requested_status": "resolved" }
+   ```
+4. **Frontend**: derive available actions from current status; disable/hide invalid options; surface API error message on rejection.
+
+## When Editing
+
+- If you add or change status logic, update `data-model.md` state machine section and run/write integration tests (see `testing-discipline.mdc`).
+- Never add a transition without explicit user approval — the assessment defines exactly five.

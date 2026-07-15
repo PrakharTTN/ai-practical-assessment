@@ -1,0 +1,61 @@
+---
+description: Require real PostgreSQL integration tests for ticket status transitions
+globs: tests/**/*.py,src/backend/**/test*.py,src/backend/**/*_test.py
+alwaysApply: false
+---
+
+# Testing Discipline
+
+## Mandatory: State Machine Integration Tests
+
+The assessment **requires** integration tests against a **real PostgreSQL database** (not SQLite, not mocked DB) proving:
+
+### Valid transitions (must succeed — 2xx)
+
+| From | To |
+|------|-----|
+| `open` | `in_progress` |
+| `open` | `cancelled` |
+| `in_progress` | `resolved` |
+| `in_progress` | `cancelled` |
+| `resolved` | `closed` |
+
+### Invalid transitions (must fail — 400/422 with `invalid_status_transition`)
+
+At minimum test:
+
+- `open` → `resolved`
+- `open` → `closed`
+- `in_progress` → `open`
+- `resolved` → `in_progress`
+- `closed` → `open`
+- `cancelled` → `in_progress`
+
+## Test Location
+
+`tests/backend/integration/test_ticket_status_transitions.py`
+
+## Requirements
+
+1. Use pytest + FastAPI `TestClient` (or httpx `AsyncClient`)
+2. Seed or fixture-create a ticket per test; do not rely on manual DB state
+3. Assert response body contains `error: invalid_status_transition` on failures
+4. Run against PostgreSQL via `DATABASE_URL` test database (truncate/rollback between tests)
+5. Record results in `test-results.md` after meaningful test runs
+
+## Additional Tests (encouraged)
+
+- Ticket create validation (missing title → 422)
+- Comment requires message
+- CSV export returns only caller's tickets
+- Unauthenticated access → 401
+
+## Do Not
+
+- Mark state-machine work complete without passing integration tests
+- Mock the database for transition tests
+- Skip invalid-transition cases
+
+## Skill
+
+Use `write-state-machine-tests` skill when adding or fixing transition tests.

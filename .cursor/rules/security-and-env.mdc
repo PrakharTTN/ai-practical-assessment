@@ -1,0 +1,47 @@
+---
+description: Prevent secrets in repo; enforce env-based configuration
+globs: "**/*"
+alwaysApply: true
+---
+
+# Security and Environment
+
+## Never Commit
+
+- `.env`, `.env.local`, any file containing real credentials
+- `DATABASE_URL` with production passwords
+- `JWT_SECRET`, `SECRET_KEY`, API keys, private keys (`.pem`, `.key`)
+- `credentials.json`, database dumps with real user data
+
+## Required Pattern
+
+1. Provide `.env.example` at repo root with **placeholder** values only:
+   ```
+   DATABASE_URL=postgresql://ticket_user:changeme@localhost:5432/tickets_db
+   JWT_SECRET=change-me-to-a-long-random-string
+   JWT_ALGORITHM=HS256
+   JWT_EXPIRE_MINUTES=60
+   ```
+2. Load secrets via `os.environ` / Pydantic `Settings` — never hardcode in source
+3. `.gitignore` already excludes `.env` — do not remove those entries
+
+## Auth Security
+
+- Passwords stored as bcrypt hashes only (`password_hash` column)
+- JWT validated on all ticket/comment/export routes except `POST /api/auth/login`
+- CSV export scoped to authenticated user — no `?userId=` override param
+
+## Pre-Commit Self-Check
+
+Before any commit, verify diff does not contain:
+
+- Strings matching `postgresql://.*:.*@`
+- `sk-`, `AKIA`, `Bearer eyJ` with real tokens
+- Assignments like `SECRET_KEY = "..."` with literal values
+
+If a secret was committed: remove, rotate, and document in `debugging-notes.md` — do not paste the secret in docs.
+
+## Frontend
+
+- Store JWT in memory or `sessionStorage` — not `localStorage` if avoidable
+- Do not log tokens to console in production code

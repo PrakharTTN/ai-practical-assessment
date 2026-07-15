@@ -1,0 +1,51 @@
+---
+description: Keep assessment lifecycle artifacts updated as work progresses
+globs: ai-prompts/**/*.md,*.md,tool-specific/cursor-workflow/**/*
+alwaysApply: false
+---
+
+# Artifact Discipline
+
+Feedback weights **AI workflow and lifecycle artifacts** as much as working code. Update docs in the same session as the work they describe.
+
+## When to Update What
+
+| Activity | Update these files |
+|----------|-------------------|
+| Requirement clarification | `requirements-analysis.md`, `acceptance-criteria.md` |
+| Architecture / design decision | `design-notes.md`, `data-model.md`, `ui-flow.md` |
+| API implementation | `api-contract.md` (also see `api-contract-sync.mdc`) |
+| Test plan or run | `test-strategy.md`, `test-results.md` |
+| Bug investigation | `debugging-notes.md`, `ai-prompts/debugging.md` |
+| Code review | `code-review-notes.md`, `review-fixes.md`, `ai-prompts/code-review.md` |
+| Cursor session worth keeping | `ai-prompts/<phase>.md` via `capture-prompt-session` skill |
+| Milestone complete | `implementation-plan.md` checkboxes, `pr-description.md` |
+
+## Prompt History Format
+
+Each entry in `ai-prompts/*.md`:
+
+```markdown
+## Session: <title>
+**Date:** YYYY-MM-DD
+
+### Prompt
+<summary or text>
+
+### AI Response Summary
+<what was suggested>
+
+### Accepted / Changed / Rejected
+<what you did and why>
+```
+
+## Minimum Cadence
+
+- After each major feature (auth, tickets CRUD, status, comments, export, search): one prompt capture + relevant artifact update
+- Before submission: `reflection.md`, `final-ai-usage-summary.md`, `tool-workflow.md`, `candidate-info.md` complete
+
+## Do Not
+
+- Leave placeholder-only artifacts at submission
+- Fabricate debugging or review notes — record real issues
+- Dump entire chat logs — curate 10–15 representative sessions
